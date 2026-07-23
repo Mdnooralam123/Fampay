@@ -8,11 +8,11 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes flash { 0%, 100% { background-color: transparent; } 50% { background-color: #bbf7d0; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         .slide-in { animation: slideIn 0.3s ease-out; }
         .payment-flash { animation: flash 0.5s; }
         .balance-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -45,15 +45,25 @@
         </div>
         
         <div class="grid md:grid-cols-2 gap-6">
-            <!-- QR Code -->
+            <!-- QR Code with Amount -->
             <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">📱 Scan to Pay</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-4">📱 QR Payment</h3>
                 <div class="flex justify-center">
                     <img id="qrCode" src="/api/get_qr" alt="QR Code" class="w-48 h-48 border-2 border-gray-200 rounded-xl">
                 </div>
-                <button onclick="refreshQR()" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                    🔄 Refresh QR
-                </button>
+                <div class="mt-4 space-y-3">
+                    <div class="flex gap-2">
+                        <input type="number" id="qrAmount" placeholder="Enter amount" 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="updateQRWithAmount()" 
+                                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                            Update QR
+                        </button>
+                    </div>
+                    <button onclick="refreshQR()" class="w-full bg-gray-100 hover:bg-gray-200 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                        🔄 Refresh QR
+                    </button>
+                </div>
             </div>
             
             <!-- Create Order -->
@@ -102,6 +112,7 @@
     </div>
     
     <script>
+        // Create Order
         async function createOrder() {
             const amount = document.getElementById('amountInput').value;
             if (!amount || amount <= 0) {
@@ -137,6 +148,7 @@
             }
         }
         
+        // Check Payments
         async function checkPayments() {
             try {
                 const response = await fetch('/api/check_payments', {
@@ -145,8 +157,10 @@
                 const data = await response.json();
                 
                 if (data.new_payments && data.new_payments.length > 0) {
+                    // Update balance
                     document.getElementById('balance').textContent = '₹' + data.balance.toFixed(2);
                     
+                    // Add transactions
                     const container = document.getElementById('transactionsList');
                     data.new_payments.forEach(payment => {
                         const div = document.createElement('div');
@@ -164,6 +178,7 @@
                     
                     document.getElementById('txnCount').textContent = data.total_transactions + ' transactions';
                     
+                    // Show notification
                     if (Notification.permission === 'granted') {
                         new Notification('💰 Payment Received!', {
                             body: `₹${data.new_payments[0].amount} from ${data.new_payments[0].sender}`,
@@ -178,13 +193,32 @@
             }
         }
         
-        function refreshQR() {
-            document.getElementById('qrCode').src = '/api/get_qr?_=' + Date.now();
+        // Update QR with Amount
+        function updateQRWithAmount() {
+            const amount = document.getElementById('qrAmount').value;
+            if (amount && amount > 0) {
+                document.getElementById('qrCode').src = '/api/get_qr?amount=' + amount + '&_=' + Date.now();
+            } else {
+                refreshQR();
+            }
         }
         
+        // Refresh QR
+        function refreshQR() {
+            document.getElementById('qrCode').src = '/api/get_qr?_=' + Date.now();
+            document.getElementById('qrAmount').value = '';
+        }
+        
+        // Auto-refresh QR every 60 seconds
         setInterval(refreshQR, 60000);
+        
+        // Auto-check payments every 30 seconds
         setInterval(checkPayments, 30000);
         
+        // Check on load
+        setTimeout(checkPayments, 3000);
+        
+        // Request notification permission
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }

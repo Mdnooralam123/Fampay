@@ -34,9 +34,11 @@
             
             <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">💳 FamPay UPI ID</label>
-                <input type="text" id="upi" required
-                       placeholder="yourname@fam"
+                <input type="text" id="upi" 
+                       placeholder="9304619487@fam"
+                       value="9304619487@fam"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-400 mt-1">Your FamPay UPI ID (default: 9304619487@fam)</p>
             </div>
             
             <button type="submit" id="submitBtn"
@@ -57,7 +59,7 @@
             
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-            const upi = document.getElementById('upi').value.trim();
+            const upi = document.getElementById('upi').value.trim() || '9304619487@fam';
             
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('submitBtn').disabled = true;
@@ -79,7 +81,7 @@
                 
                 if (data.success) {
                     document.getElementById('success').textContent = 
-                        `✅ ${data.message} Found ${data.payments_found} payments!`;
+                        `✅ ${data.message} Found ${data.payments_found} payments! Balance: ₹${data.balance.toFixed(2)}`;
                     document.getElementById('success').classList.remove('hidden');
                     setTimeout(() => {
                         window.location.href = '/';
