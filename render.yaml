@@ -13,5 +13,3 @@ services:
         value: https://fampaygateway.site/api/create_order.php
       - key: SECRET_KEY
         generateValue: true
-      - key: PYTHON_VERSION
-        value: 3.10.12

@@ -15,14 +15,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Flask app with proper package finding
-import importlib
-import sys
-
 app = Flask(__name__, 
             template_folder='templates',
-            static_folder='static',
-            instance_relative_config=True)
+            static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'fampay-secret-key-2026')
 CORS(app)
 
@@ -160,7 +155,11 @@ class GmailMonitor:
             logger.error(f"Gmail check error: {e}")
             return []
 
-@app.route('/')
+# ============================================
+# ALL ROUTES - FIXED
+# ============================================
+
+@app.route('/', methods=['GET'])
 def index():
     """Main dashboard"""
     return render_template('index.html',
@@ -168,7 +167,7 @@ def index():
                          transactions=user_data['transactions'],
                          upi_id=user_data.get('fampay_upi', 'Not Set'))
 
-@app.route('/setup', methods=['GET', 'POST'])
+@app.route('/setup', methods=['GET', 'POST'])  # ✅ FIXED
 def setup():
     """Setup page"""
     if request.method == 'POST':
