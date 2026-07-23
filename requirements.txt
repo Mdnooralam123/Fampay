@@ -1,10 +1,8 @@
-flask==2.3.2
-flask-cors==4.0.0
+Flask==2.3.3
+Flask-Cors==4.0.1
 requests==2.31.0
-beautifulsoup4==4.12.2
-python-dotenv==1.0.0
+beautifulsoup4==4.12.3
+python-dotenv==1.0.1
 imapclient==3.0.1
 mail-parser==3.15.0
-google-api-python-client==2.95.0
-google-auth-oauthlib==1.0.0
-google-auth-httplib2==0.1.1
+gunicorn==21.2.0
