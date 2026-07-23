@@ -7,12 +7,12 @@
     <style>
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes flash { 0%, 100% { background-color: transparent; } 50% { background-color: #bbf7d0; } }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         .slide-in { animation: slideIn 0.3s ease-out; }
         .payment-flash { animation: flash 0.5s; }
-        @keyframes flash { 0%, 100% { background-color: transparent; } 50% { background-color: #bbf7d0; } }
         .balance-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -102,7 +102,6 @@
     </div>
     
     <script>
-        // Create Order
         async function createOrder() {
             const amount = document.getElementById('amountInput').value;
             if (!amount || amount <= 0) {
@@ -138,7 +137,6 @@
             }
         }
         
-        // Check Payments
         async function checkPayments() {
             try {
                 const response = await fetch('/api/check_payments', {
@@ -147,10 +145,8 @@
                 const data = await response.json();
                 
                 if (data.new_payments && data.new_payments.length > 0) {
-                    // Update balance
                     document.getElementById('balance').textContent = '₹' + data.balance.toFixed(2);
                     
-                    // Add transactions
                     const container = document.getElementById('transactionsList');
                     data.new_payments.forEach(payment => {
                         const div = document.createElement('div');
@@ -166,10 +162,8 @@
                         container.insertBefore(div, container.firstChild);
                     });
                     
-                    // Update count
                     document.getElementById('txnCount').textContent = data.total_transactions + ' transactions';
                     
-                    // Show notification
                     if (Notification.permission === 'granted') {
                         new Notification('💰 Payment Received!', {
                             body: `₹${data.new_payments[0].amount} from ${data.new_payments[0].sender}`,
@@ -184,18 +178,13 @@
             }
         }
         
-        // Refresh QR
         function refreshQR() {
             document.getElementById('qrCode').src = '/api/get_qr?_=' + Date.now();
         }
         
-        // Auto-refresh QR every 60 seconds
         setInterval(refreshQR, 60000);
-        
-        // Auto-check payments every 30 seconds
         setInterval(checkPayments, 30000);
         
-        // Request notification permission
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
