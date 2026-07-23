@@ -25,7 +25,7 @@ CORS(app)
 FAMPAY_API_URL = os.environ.get('FAMPAY_API_URL', 'https://fampaygateway.site/api/create_order.php')
 FAMPAY_API_KEY = os.environ.get('FAMPAY_API_KEY', 'FAM_9D6E3230864644382B11215E46E93283144AE8A4')
 
-# In-memory storage (use Redis/Database in production)
+# In-memory storage
 user_data = {
     'gmail_email': None,
     'gmail_password': None,
