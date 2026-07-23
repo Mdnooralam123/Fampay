@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import re
@@ -20,7 +20,7 @@ CORS(app)
 FAMPAY_API_URL = os.environ.get('FAMPAY_API_URL', 'https://fampaygateway.site/api/create_order.php')
 FAMPAY_API_KEY = os.environ.get('FAMPAY_API_KEY', 'FAM_9D6E3230864644382B11215E46E93283144AE8A4')
 
-# In-memory storage (Vercel serverless - use database in production)
+# In-memory storage
 user_data = {
     'gmail_email': None,
     'gmail_password': None,
@@ -62,26 +62,21 @@ class GmailMonitor:
     def parse_payment_email(body, subject):
         """Parse payment details from FamPay email"""
         try:
-            # Extract amount
             amount_match = re.search(r'₹([\d.]+)', body)
             if not amount_match:
                 return None
             
             amount = float(amount_match.group(1))
             
-            # Extract sender
             sender_match = re.search(r'from\s+([A-Z\s]+)', body)
             sender = sender_match.group(1).strip() if sender_match else "Unknown"
             
-            # Extract transaction ID
             txn_match = re.search(r'Transaction ID\s*:\s*([A-Z0-9]+)', body)
             txn_id = txn_match.group(1) if txn_match else None
             
-            # Extract UTR
             utr_match = re.search(r'UTR\s*:\s*(\d+)', body)
             utr = utr_match.group(1) if utr_match else None
             
-            # Extract date
             date_match = re.search(r'Date\s*:\s*([\d:APM\s]+)', body)
             date_str = date_match.group(1) if date_match else None
             
@@ -102,15 +97,12 @@ class GmailMonitor:
     def check_emails(email_address, app_password):
         """Check Gmail for FamPay emails"""
         try:
-            # Remove spaces from app password if any
             app_password = app_password.replace(' ', '')
             
-            # Connect to Gmail IMAP
             imap = imaplib.IMAP_SSL("imap.gmail.com")
             imap.login(email_address, app_password)
             imap.select("INBOX")
             
-            # Search for FamPay emails
             status, messages = imap.search(None, '(SUBJECT "famapp" OR SUBJECT "FamX" OR FROM "@fam" OR TEXT "famapp")')
             
             if status != 'OK':
@@ -121,7 +113,6 @@ class GmailMonitor:
             email_ids = messages[0].split()
             payments = []
             
-            # Check last 5 emails
             for e_id in email_ids[-5:]:
                 status, msg_data = imap.fetch(e_id, '(RFC822)')
                 if status != 'OK':
@@ -131,12 +122,10 @@ class GmailMonitor:
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
                         
-                        # Parse subject
                         subject, encoding = decode_header(msg["Subject"])[0]
                         if isinstance(subject, bytes):
                             subject = subject.decode(encoding or 'utf-8')
                         
-                        # Parse body
                         body = ""
                         if msg.is_multipart():
                             for part in msg.walk():
@@ -148,7 +137,6 @@ class GmailMonitor:
                         else:
                             body = msg.get_payload(decode=True).decode()
                         
-                        # Parse payment data
                         payment_data = GmailMonitor.parse_payment_email(body, subject)
                         if payment_data:
                             payment_data['email_id'] = e_id.decode()
@@ -161,7 +149,7 @@ class GmailMonitor:
             print(f"Gmail check error: {e}")
             return []
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     """Main dashboard"""
     return render_template('index.html',
@@ -171,17 +159,15 @@ def index():
 
 @app.route('/setup', methods=['GET', 'POST'])
 def setup():
-    """Setup page - YAHAN WEB FORM SE GMAIL PASSWORD DALEIN"""
+    """Setup page"""
     if request.method == 'POST':
         gmail_email = request.form.get('gmail_email')
         gmail_password = request.form.get('gmail_password')
         fampay_upi = request.form.get('fampay_upi')
         
-        # Test Gmail connection
         try:
             test_payments = GmailMonitor.check_emails(gmail_email, gmail_password)
             
-            # Save user data
             user_data['gmail_email'] = gmail_email
             user_data['gmail_password'] = gmail_password
             user_data['fampay_upi'] = fampay_upi
@@ -239,7 +225,6 @@ def check_payments():
         
         new_payments = []
         for payment in payments:
-            # Check if already processed
             if not any(t.get('transaction_id') == payment.get('transaction_id') 
                       for t in user_data['transactions']):
                 user_data['balance'] += payment['amount']
@@ -315,9 +300,15 @@ def not_found(e):
 def server_error(e):
     return jsonify({'error': 'Internal server error'}), 500
 
-# Vercel handler
-def handler(request):
+# ============================================
+# ⭐ IMPORTANT: Vercel Handler
+# ============================================
+def handler(request, context=None):
+    """Vercel serverless function handler"""
     return app(request)
 
+# ============================================
+# For local development
+# ============================================
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
