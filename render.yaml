@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: fampay-gateway
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FAMPAY_API_KEY
+        value: FAM_9D6E3230864644382B11215E46E93283144AE8A4
+      - key: FAMPAY_API_URL
+        value: https://fampaygateway.site/api/create_order.php
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.9.0
